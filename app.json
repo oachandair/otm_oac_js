@@ -20,10 +20,21 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.oachandair.otm_oac_js",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyAAAlms3UHsRiEd72EvYOcEVyqnFaFcdqE"
+        }
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "2ea6b47c-ca1d-43c6-96ba-54fdddcdf7fc"
+      }
     }
   }
 }
