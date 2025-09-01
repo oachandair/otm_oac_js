@@ -1,7 +1,9 @@
 import { getStoredToken } from "./authService";
 import { HOST } from "../utils/constants";
+import { buildShipmentEventGPSPayload } from "../utils/jsonBuilders";
 
-export async function sendShipmentEvent(eventPayload) {
+export async function sendShipmentEventGPS({ shipmentGid, location, quickCode = "CSDPK", remarkText = "AAAA-XX-CCC" }) {
+  const eventPayload = buildShipmentEventGPSPayload({ shipmentGid, location, quickCode, remarkText });
   const token = await getStoredToken();
   const res = await fetch(`${HOST}/GC3/api/shipment/add_event`, {
     method: "POST",
