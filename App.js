@@ -8,6 +8,8 @@ import ChildSubzonesScreen from "./src/screens/ChildSubzonesScreen";
 import ShipmentsScreen from "./src/screens/ShipmentsScreen";
 import ShipmentDetailsScreen from "./src/screens/ShipmentDetailsScreen";
 import ShipmentSearchScreen from "./src/screens/ShipmentSearchScreen";
+import StandardShipmentsScreen from './src/screens/StandardShipmentsScreen';
+import ManifestShipmentsScreen from './src/screens/ManifestShipmentsScreen';
 
 const Stack = createStackNavigator();
 
@@ -22,6 +24,8 @@ export default function App() {
           <Stack.Screen name="Shipments" component={ShipmentsScreen} />
           <Stack.Screen name="ShipmentDetails" component={ShipmentDetailsScreen} />
           <Stack.Screen name="ShipmentSearch" component={ShipmentSearchScreen} />
+          <Stack.Screen name="StandardShipments" component={StandardShipmentsScreen} />
+          <Stack.Screen name="ManifestShipments" component={ManifestShipmentsScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </AuthProvider>
