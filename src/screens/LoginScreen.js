@@ -69,6 +69,17 @@ export default function LoginScreen({ navigation }) {
         style={{ marginBottom: 20, padding: 8, borderRadius: 4, borderWidth: 1, borderColor: '#ccc' }}
       />
       <Button title="Login" onPress={handleLogin} />
+      <Text
+        style={{
+          marginTop: 32,
+          textAlign: "center",
+          color: "#888",
+          fontSize: 14,
+          letterSpacing: 1,
+        }}
+      >
+        Version v1.11
+      </Text>
     </View>
   );
 }
