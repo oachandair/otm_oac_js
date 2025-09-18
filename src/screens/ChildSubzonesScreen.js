@@ -4,8 +4,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from "../context/AuthContext";
 import { getSubzonesFromLocationGid } from "../services/locationService";
-import { sendDriverActivityStatusUpdate } from "../services/updateService";
-import { sendDriverVisibilitySourceUpdate } from "../services/driverVisibilityService";
+import { sendDriverDoubleRefnumUpdate } from "../services/update2ref";
 
 export default function ChildSubzonesScreen({ route }) {
   const navigation = useNavigation();
@@ -30,9 +29,12 @@ export default function ChildSubzonesScreen({ route }) {
 
   const handleSelect = async (subzone) => {
     try {
-      await sendDriverVisibilitySourceUpdate({
+      await sendDriverDoubleRefnumUpdate({
         driverGid: authState.userId,
-        subzone: subzone.xid,
+        qualifier1: "ACTIVITY",
+        value1: selectedSubzone,      // parent subzone from route.params
+        qualifier2: "VISIBILITY_SRC",
+        value2: subzone.xid,          // child subzone from selection
       });
       Alert.alert("Visibility Source Updated", `Subzone set to ${subzone.xid}`);
       if (selectedSubzone === "SEARCH") {

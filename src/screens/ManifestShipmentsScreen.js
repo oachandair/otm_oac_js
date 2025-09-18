@@ -44,14 +44,14 @@ export default function ManifestShipmentsScreen() {
       <TouchableOpacity
         onPress={async () => {
           try {
-            // Send driver activity update
             const refnumValue1 = item.refnumValue1;
             const listidValue = refnumValue1?.substring(refnumValue1.lastIndexOf('--') + 2) || '';
-            await import('../services/updateService').then(({ sendDriverActivityRefnumUpdate }) =>
-              sendDriverActivityRefnumUpdate({
+            const refnumValue = `${selectedSubzone}--${listidValue}`;
+            await import('../services/update1ref').then(({ sendDriverSingleRefnumUpdate }) =>
+              sendDriverSingleRefnumUpdate({
                 driverGid: authState.userId,
-                selectedSubzone,
-                listidValue,
+                refnumQualifier: "ACTIVITY",
+                refnumValue,
               })
             );
             Alert.alert("Driver Update", "Activity refnum updated.");

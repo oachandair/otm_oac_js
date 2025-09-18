@@ -20,7 +20,6 @@ export default function ShipmentsScreen() {
   const [shipments, setShipments] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
-  // ...existing code...
   const route = useRoute();
   const { authState } = useAuth();
   // Get selectedSubzone from navigation params reliably
@@ -73,20 +72,7 @@ export default function ShipmentsScreen() {
         onPress={async () => {
           // ...existing code...
           if (stop1 && stop1.refnumValue2 === "OBHEADER") {
-            try {
-              const refnumValue1 = item.refnumValue1;
-              const listidValue = refnumValue1?.substring(refnumValue1.lastIndexOf('--') + 2) || '';
-              await sendDriverActivityRefnumUpdate({
-                driverGid: authState.userId,
-                selectedSubzone,
-                listidValue,
-              });
-              const refreshedData = await getVisibleShipments();
-              setShipments(refreshedData);
-              Alert.alert("Driver Update", "Activity refnum updated.");
-            } catch (err) {
-              Alert.alert("Error", err.message || "Driver update failed");
-            }
+            navigation.navigate("ShipmentDetails", { shipmentGid: item.shipmentGid });
           } else {
             navigation.navigate("ShipmentDetails", { shipmentGid: item.shipmentGid });
           }

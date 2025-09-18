@@ -2,9 +2,9 @@ import { getStoredToken } from "./authService";
 import { HOST } from "../utils/constants";
 import { buildVisibilitySourceUpdateXML } from "../utils/xmlBuilders";
 
-export async function sendDriverVisibilitySourceUpdate({ driverGid, subzone }) {
+export async function sendDriverVisibilitySourceUpdate({ driverGid, selectedSubzone, childSubzone }) {
   const token = await getStoredToken();
-  const xml = buildVisibilitySourceUpdateXML(driverGid, subzone);
+  const xml = buildVisibilitySourceUpdateXML(driverGid, selectedSubzone, childSubzone);
   console.log("[DEBUG] VisibilitySource XML:\n", xml);
 
   const res = await fetch(`${HOST}/GC3/glog.integration.servlet.WMServlet`, {

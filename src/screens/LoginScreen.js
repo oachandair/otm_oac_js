@@ -8,7 +8,7 @@ export default function LoginScreen({ navigation }) {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState(""); // 'success' or 'error'
-  const { login } = useAuth();
+  const { login, authState } = useAuth();
 
   const handleLogin = async () => {
     try {
@@ -27,6 +27,8 @@ export default function LoginScreen({ navigation }) {
   setTimeout(() => setMessage("") , 2000);
     }
   };
+
+  console.log(authState.roles); // ["TMSA.SUPERVISOR_ROLE", "SUPERVISOR_ROLE"]
 
   return (
     <View style={{ padding: 20 }}>
@@ -78,7 +80,7 @@ export default function LoginScreen({ navigation }) {
           letterSpacing: 1,
         }}
       >
-        Version v1.11
+        Version v1.13
       </Text>
     </View>
   );

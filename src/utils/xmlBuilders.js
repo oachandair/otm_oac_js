@@ -1,6 +1,7 @@
 import { DOMAIN } from "./constants";
 
-export function buildVisibilitySourceUpdateXML(driverGid, subzone) {
+// Accepts driverGid, selectedSubzone (activity), and childSubzone (visibilitySrc)
+export function buildVisibilitySourceUpdateXML(driverGid, selectedSubzone, childSubzone) {
   const [, xid] = driverGid.split(".");
 
   return `
@@ -15,37 +16,7 @@ export function buildVisibilitySourceUpdateXML(driverGid, subzone) {
           <otm:Xid>${xid}</otm:Xid>
         </otm:Gid>
         <otm:TransactionCode>U</otm:TransactionCode>
-        <otm:Refnum>
-          <otm:RefnumQualifierGid>
-            <otm:Gid>
-              <otm:DomainName>${DOMAIN}</otm:DomainName>
-              <otm:Xid>VISIBILITY_SRC</otm:Xid>
-            </otm:Gid>
-          </otm:RefnumQualifierGid>
-          <otm:RefnumValue>${subzone}</otm:RefnumValue>
-        </otm:Refnum>
-      </otm:GenericStatusUpdate>
-    </GLogXMLElement>
-  </TransmissionBody>
-</Transmission>
-  `.trim();
-}
-
-export function buildGenericStatusUpdateXML(driverGid, subzone) {
-  const [, xid] = driverGid.split(".");
-
-  return `
-<Transmission xmlns="http://xmlns.oracle.com/apps/otm/transmission/v6.4">
-  <TransmissionHeader/>
-  <TransmissionBody>
-    <GLogXMLElement>
-      <otm:GenericStatusUpdate xmlns:otm="http://xmlns.oracle.com/apps/otm/transmission/v6.4">
-        <otm:GenericStatusObjectType>DRIVER</otm:GenericStatusObjectType>
-        <otm:Gid>
-          <otm:DomainName>${DOMAIN}</otm:DomainName>
-          <otm:Xid>${xid}</otm:Xid>
-        </otm:Gid>
-        <otm:TransactionCode>U</otm:TransactionCode>
+        ${selectedSubzone ? `
         <otm:Refnum>
           <otm:RefnumQualifierGid>
             <otm:Gid>
@@ -53,8 +24,20 @@ export function buildGenericStatusUpdateXML(driverGid, subzone) {
               <otm:Xid>ACTIVITY</otm:Xid>
             </otm:Gid>
           </otm:RefnumQualifierGid>
-          <otm:RefnumValue>${subzone}</otm:RefnumValue>
+          <otm:RefnumValue>${selectedSubzone}</otm:RefnumValue>
         </otm:Refnum>
+        ` : ""}
+        ${childSubzone ? `
+        <otm:Refnum>
+          <otm:RefnumQualifierGid>
+            <otm:Gid>
+              <otm:DomainName>${DOMAIN}</otm:DomainName>
+              <otm:Xid>VISIBILITY_SRC</otm:Xid>
+            </otm:Gid>
+          </otm:RefnumQualifierGid>
+          <otm:RefnumValue>${childSubzone}</otm:RefnumValue>
+        </otm:Refnum>
+        ` : ""}
       </otm:GenericStatusUpdate>
     </GLogXMLElement>
   </TransmissionBody>
@@ -110,6 +93,108 @@ export function buildDriverSearchRefnumUpdateXML(driverGid, trailerId) {
             </otm:GenericStatusUpdate>
         </GLogXMLElement>
     </TransmissionBody>
+</Transmission>
+  `.trim();
+}
+
+export function buildGenericStatusUpdateXML(driverGid, refnumValue) {
+  const [, xid] = driverGid.split(".");
+
+  return `
+<Transmission xmlns="http://xmlns.oracle.com/apps/otm/transmission/v6.4">
+  <TransmissionHeader/>
+  <TransmissionBody>
+    <GLogXMLElement>
+      <otm:GenericStatusUpdate xmlns:otm="http://xmlns.oracle.com/apps/otm/transmission/v6.4">
+        <otm:GenericStatusObjectType>DRIVER</otm:GenericStatusObjectType>
+        <otm:Gid>
+          <otm:DomainName>${DOMAIN}</otm:DomainName>
+          <otm:Xid>${xid}</otm:Xid>
+        </otm:Gid>
+        <otm:TransactionCode>U</otm:TransactionCode>
+        <otm:Refnum>
+          <otm:RefnumQualifierGid>
+            <otm:Gid>
+              <otm:DomainName>${DOMAIN}</otm:DomainName>
+              <otm:Xid>SEARCH_TRAILER_ID</otm:Xid>
+            </otm:Gid>
+          </otm:RefnumQualifierGid>
+          <otm:RefnumValue>${refnumValue}</otm:RefnumValue>
+        </otm:Refnum>
+      </otm:GenericStatusUpdate>
+    </GLogXMLElement>
+  </TransmissionBody>
+</Transmission>
+  `.trim();
+}
+
+export function buildSingleRefnumUpdateXML(driverGid, refnumQualifier, refnumValue) {
+  const [, xid] = driverGid.split(".");
+  return `
+<Transmission xmlns="http://xmlns.oracle.com/apps/otm/transmission/v6.4">
+  <TransmissionHeader/>
+  <TransmissionBody>
+    <GLogXMLElement>
+      <otm:GenericStatusUpdate xmlns:otm="http://xmlns.oracle.com/apps/otm/transmission/v6.4">
+        <otm:GenericStatusObjectType>DRIVER</otm:GenericStatusObjectType>
+        <otm:Gid>
+          <otm:DomainName>TMSA</otm:DomainName>
+          <otm:Xid>${xid}</otm:Xid>
+        </otm:Gid>
+        <otm:TransactionCode>U</otm:TransactionCode>
+        <otm:Status>
+        </otm:Status>
+        <otm:Refnum>
+          <otm:RefnumQualifierGid>
+            <otm:Gid>
+              <otm:DomainName>TMSA</otm:DomainName>
+              <otm:Xid>${refnumQualifier}</otm:Xid>
+            </otm:Gid>
+          </otm:RefnumQualifierGid>
+          <otm:RefnumValue>${refnumValue}</otm:RefnumValue>
+        </otm:Refnum>
+      </otm:GenericStatusUpdate>
+    </GLogXMLElement>
+  </TransmissionBody>
+</Transmission>
+  `.trim();
+}
+
+export function buildDoubleRefnumUpdateXML(driverGid, qualifier1, value1, qualifier2, value2) {
+  const [, xid] = driverGid.split(".");
+  return `
+<Transmission xmlns="http://xmlns.oracle.com/apps/otm/transmission/v6.4">
+  <TransmissionHeader/>
+  <TransmissionBody>
+    <GLogXMLElement>
+      <otm:GenericStatusUpdate xmlns:otm="http://xmlns.oracle.com/apps/otm/transmission/v6.4">
+        <otm:GenericStatusObjectType>DRIVER</otm:GenericStatusObjectType>
+        <otm:Gid>
+          <otm:DomainName>TMSA</otm:DomainName>
+          <otm:Xid>${xid}</otm:Xid>
+        </otm:Gid>
+        <otm:TransactionCode>U</otm:TransactionCode>
+        <otm:Refnum>
+          <otm:RefnumQualifierGid>
+            <otm:Gid>
+              <otm:DomainName>TMSA</otm:DomainName>
+              <otm:Xid>${qualifier1}</otm:Xid>
+            </otm:Gid>
+          </otm:RefnumQualifierGid>
+          <otm:RefnumValue>${value1}</otm:RefnumValue>
+        </otm:Refnum>
+        <otm:Refnum>
+          <otm:RefnumQualifierGid>
+            <otm:Gid>
+              <otm:DomainName>TMSA</otm:DomainName>
+              <otm:Xid>${qualifier2}</otm:Xid>
+            </otm:Gid>
+          </otm:RefnumQualifierGid>
+          <otm:RefnumValue>${value2}</otm:RefnumValue>
+        </otm:Refnum>
+      </otm:GenericStatusUpdate>
+    </GLogXMLElement>
+  </TransmissionBody>
 </Transmission>
   `.trim();
 }

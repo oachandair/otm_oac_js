@@ -4,7 +4,6 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from "../context/AuthContext";
 import { getSubzonesFromProcesses } from "../services/locationService";
-import { sendDriverActivityStatusUpdate } from "../services/updateService";
 
 export default function SubzonesScreen() {
   const navigation = useNavigation();
@@ -26,20 +25,11 @@ export default function SubzonesScreen() {
     load();
   }, []);
 
-  const handleSelect = async (subzone) => {
-    try {
-      await sendDriverActivityStatusUpdate({
-        driverGid: authState.userId,
-        subzone: subzone.xid,
-      });
-      Alert.alert("Status Sent", `Activity set to ${subzone.xid}`);
-      if (subzone.xid === "SINGLE") {
-        navigation.navigate("StandardShipments", { selectedSubzone: subzone.xid });
-      } else {
-        navigation.navigate("ChildSubzones", { locationGid: subzone.gid, selectedSubzone: subzone.xid });
-      }
-    } catch (err) {
-      Alert.alert("Update Failed", err.message);
+  const handleSelect = (subzone) => {
+    if (subzone.xid === "SINGLE") {
+      navigation.navigate("StandardShipments", { selectedSubzone: subzone.xid });
+    } else {
+      navigation.navigate("ChildSubzones", { locationGid: subzone.gid, selectedSubzone: subzone.xid });
     }
   };
 
