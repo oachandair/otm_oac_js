@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useLayoutEffect } from "react";
+import { useEffect, useState, useLayoutEffect } from "react";
 import { View, Text, ScrollView, Alert, TouchableOpacity, TextInput } from "react-native";
 import { sendShipmentEventGPS } from "../services/shipmentEventService";
 import ExecutionShipmentCard from '../components/ExecutionShipmentCard';
@@ -84,6 +84,70 @@ export default function ShipmentDetailsScreenDR({ route }) {
         </Text>
       </View>
       <ScrollView style={{ flex: 1, padding: 16 }}>
+        {/* Move the map to the top */}
+        {typeof latNum === 'number' && typeof lonNum === 'number' && (
+          <View
+            style={{
+              height: 280,
+              marginVertical: 16,
+              borderRadius: 18,
+              overflow: 'hidden',
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.15,
+              shadowRadius: 8,
+              elevation: 4,
+              borderWidth: 1,
+              borderColor: "#E0E0E0",
+              backgroundColor: "#fff",
+            }}
+          >
+            <MapView
+              style={{ flex: 1 }}
+              initialRegion={{
+                latitude: latNum,
+                longitude: lonNum,
+                latitudeDelta: 0.0015,
+                longitudeDelta: 0.0015,
+              }}
+              showsUserLocation={true}
+              showsCompass={true}
+              zoomEnabled={true}
+              pitchEnabled={true}
+              rotateEnabled={true}
+            >
+              <Marker
+                coordinate={{ latitude: latNum, longitude: lonNum }}
+                title="Shipment Location"
+                pinColor="blue"
+                description={`Lat: ${latNum}, Lon: ${lonNum}`}
+              />
+              {location?.coords &&
+                typeof location.coords.latitude === 'number' &&
+                typeof location.coords.longitude === 'number' && (
+                  <Marker
+                    coordinate={{ latitude: location.coords.latitude, longitude: location.coords.longitude }}
+                    title="Your Location"
+                    pinColor="green"
+                    description={`Lat: ${location.coords.latitude}, Lon: ${location.coords.longitude}`}
+                  />
+              )}
+              {location?.coords &&
+                typeof location.coords.latitude === 'number' &&
+                typeof location.coords.longitude === 'number' && (
+                  <Polyline
+                    coordinates={[
+                      { latitude: location.coords.latitude, longitude: location.coords.longitude },
+                      { latitude: latNum, longitude: lonNum }
+                    ]}
+                    strokeColor="#007AFF"
+                    strokeWidth={3}
+                  />
+              )}
+            </MapView>
+          </View>
+        )}
+        {/* Shipment details and actions below the map */}
         <ExecutionShipmentCard shipment={shipment} />
         <View style={{ marginVertical: 12 }}>
           <TextInput
@@ -127,46 +191,7 @@ export default function ShipmentDetailsScreenDR({ route }) {
             </TouchableOpacity>
           </View>
         </View>
-        {typeof latNum === 'number' && typeof lonNum === 'number' && (
-          <View style={{ height: 250, marginVertical: 16, borderRadius: 12, overflow: 'hidden' }}>
-            <MapView
-              style={{ flex: 1 }}
-              initialRegion={{
-                latitude: latNum,
-                longitude: lonNum,
-                latitudeDelta: 0.05,
-                longitudeDelta: 0.05,
-              }}
-            >
-              <Marker
-                coordinate={{ latitude: latNum, longitude: lonNum }}
-                title="Shipment Location"
-                pinColor="blue"
-                description={`Lat: ${latNum}, Lon: ${lonNum}`}
-              />
-              {location?.coords &&
-                typeof location.coords.latitude === 'number' &&
-                typeof location.coords.longitude === 'number' && (
-                  <Marker
-                    coordinate={{ latitude: location.coords.latitude, longitude: location.coords.longitude }}
-                    title="Your Location"
-                    pinColor="green"
-                    description={`Lat: ${location.coords.latitude}, Lon: ${location.coords.longitude}`}
-                  />
-              )}
-              {location?.coords &&
-                typeof location.coords.latitude === 'number' &&
-                typeof location.coords.longitude === 'number' && (
-                  <Polyline
-                    coordinates={[
-                      { latitude: location.coords.latitude, longitude: location.coords.longitude },
-                      { latitude: latNum, longitude: lonNum }
-                    ]}
-                    strokeColor="#FF0000"
-                    strokeWidth={2}
-                  />
-              )}
-            </MapView>
-          </View>
-        )}
       </ScrollView>
+    </View>
+  );
+}

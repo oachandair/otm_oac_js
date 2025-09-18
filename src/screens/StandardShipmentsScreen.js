@@ -8,6 +8,12 @@ import { useAuth } from "../context/AuthContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function StandardShipmentsScreen() {
+  const { authState } = useAuth();
+
+  useEffect(() => {
+    console.log("[DEBUG] User roles:", authState.roles);
+  }, [authState.roles]);
+
   useEffect(() => {
     console.log('Screen mounted: StandardShipmentsScreen');
   }, []);
@@ -19,7 +25,6 @@ export default function StandardShipmentsScreen() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const route = useRoute();
-  const { authState } = useAuth();
   const selectedSubzone = route.params?.selectedSubzone || "";
 
   useEffect(() => {
@@ -39,9 +44,9 @@ export default function StandardShipmentsScreen() {
 
   const renderItem = ({ item }) => {
     let screenName = "ShipmentDetailsScreenVR"; // default for OTHER
-    if (authState.roles.includes("SUPERVISOR")) {
+    if (authState.roles.includes("SUPERVISOR_ROLE")) {
       screenName = "ShipmentDetailsScreenSP";
-    } else if (authState.roles.includes("DRIVER")) {
+    } else if (authState.roles.includes("DRIVER_ROLE")) {
       screenName = "ShipmentDetailsScreenDR";
     }
     return (

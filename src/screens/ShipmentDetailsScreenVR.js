@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useLayoutEffect } from "react";
+import { useEffect, useState, useLayoutEffect } from "react";
 import { View, Text, ScrollView, Alert, TouchableOpacity, TextInput } from "react-native";
 import ExecutionShipmentCard from '../components/ExecutionShipmentCard';
 import { useCurrentLocation } from "../hooks/useCurrentLocation";
@@ -129,3 +129,8 @@ export default function ShipmentDetailsScreenVR({ route }) {
               )}
             </MapView>
           </View>
+        )}
+      </ScrollView>
+    </View>
+  );
+}
