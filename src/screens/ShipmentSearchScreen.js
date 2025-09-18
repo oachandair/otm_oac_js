@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, Button, Alert, SafeAreaView, TouchableOpacity } from "react-native";
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-// ...existing code...
+import { View, Text, TextInput, Button, Alert, TouchableOpacity } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { sendDriverRefnumUpdate } from "../services/driverSearchService";
 

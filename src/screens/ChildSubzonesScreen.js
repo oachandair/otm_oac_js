@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, TouchableOpacity, Alert, SafeAreaView } from "react-native";
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { View, Text, FlatList, TouchableOpacity, Alert } from "react-native";
+import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from "../context/AuthContext";
 import { getSubzonesFromLocationGid } from "../services/locationService";
 import { sendDriverDoubleRefnumUpdate } from "../services/update2ref";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ChildSubzonesScreen({ route }) {
   const navigation = useNavigation();

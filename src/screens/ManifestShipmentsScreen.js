@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useLayoutEffect } from "react";
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import { View, Text, FlatList, Alert, TouchableOpacity, TextInput, Image, ActivityIndicator, SafeAreaView } from "react-native";
+import { MaterialIcons } from '@expo/vector-icons';
+import { View, Text, FlatList, Alert, TouchableOpacity, TextInput, Image, ActivityIndicator } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { getVisibleShipments } from "../services/shpmentsService";
 import { useAuth } from "../context/AuthContext";

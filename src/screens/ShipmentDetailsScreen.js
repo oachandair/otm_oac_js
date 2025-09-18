@@ -6,7 +6,7 @@ import { useCurrentLocation } from "../hooks/useCurrentLocation";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import { getShipmentDetails } from "../services/shpmentsService";
 
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 
 export default function ShipmentDetailsScreen({ route }) {
@@ -52,6 +52,27 @@ export default function ShipmentDetailsScreen({ route }) {
   // Convert to numbers for MapView
   const latNum = latitude ? parseFloat(latitude) : null;
   const lonNum = longitude ? parseFloat(longitude) : null;
+
+  const handleSendEvent = async (quickCode) => {
+    if (!location?.coords) {
+      Alert.alert("Location not available", "Please enable location services and try again.");
+      return;
+    }
+    const args = {
+      shipmentGid: shipment.shipmentGid,
+      location,
+      quickCode,
+      remarkText,
+    };
+    console.log("[DEBUG] Event Args:", args);
+    try {
+      const response = await sendShipmentEventGPS(args); // auth handled inside service
+      Alert.alert("Event Sent", response);
+      await reloadShipment();
+    } catch (err) {
+      Alert.alert("Send Failed", err.message);
+    }
+  };
 
   return (
     <View style={{ flex: 1 }}>
@@ -100,26 +121,7 @@ export default function ShipmentDetailsScreen({ route }) {
         <View style={{ flex: 1, marginRight: 8 }}>
           <TouchableOpacity
             style={{ backgroundColor: '#FFD600', paddingVertical: 12, borderRadius: 6, alignItems: 'center' }}
-            onPress={async () => {
-              if (!location?.coords) {
-                Alert.alert("Location not available", "Please enable location services and try again.");
-                return;
-              }
-              const args = {
-                shipmentGid: shipment.shipmentGid,
-                location,
-                quickCode: "CSAPK",
-                remarkText,
-              };
-              console.log("[DEBUG] Event Args:", args);
-              try {
-                const response = await sendShipmentEventGPS(args);
-                Alert.alert("Event Sent", response);
-                await reloadShipment();
-              } catch (err) {
-                Alert.alert("Send Failed", err.message);
-              }
-            }}
+            onPress={() => handleSendEvent("CSAPK")}
           >
             <Text style={{ color: '#333', fontWeight: 'bold' }}>Send CSAPK</Text>
           </TouchableOpacity>
@@ -128,26 +130,7 @@ export default function ShipmentDetailsScreen({ route }) {
         <View style={{ flex: 1, marginLeft: 8 }}>
           <TouchableOpacity
             style={{ backgroundColor: '#43A047', paddingVertical: 12, borderRadius: 6, alignItems: 'center' }}
-            onPress={async () => {
-              if (!location?.coords) {
-                Alert.alert("Location not available", "Please enable location services and try again.");
-                return;
-              }
-              const args = {
-                shipmentGid: shipment.shipmentGid,
-                location,
-                quickCode: "CSDPK",
-                remarkText,
-              };
-              console.log("[DEBUG] Event Args:", args);
-              try {
-                const response = await sendShipmentEventGPS(args);
-                Alert.alert("Event Sent", response);
-                await reloadShipment();
-              } catch (err) {
-                Alert.alert("Send Failed", err.message);
-              }
-            }}
+            onPress={() => handleSendEvent("CSDPK")}
           >
             <Text style={{ color: '#fff', fontWeight: 'bold' }}>Send CSDPK</Text>
           </TouchableOpacity>

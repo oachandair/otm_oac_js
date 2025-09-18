@@ -1,6 +1,6 @@
 import { DOMAIN } from "./constants";
 
-// Accepts driverGid, selectedSubzone (activity), and childSubzone (visibilitySrc)
+//todel  Accepts driverGid, selectedSubzone (activity), and childSubzone (visibilitySrc)
 export function buildVisibilitySourceUpdateXML(driverGid, selectedSubzone, childSubzone) {
   const [, xid] = driverGid.split(".");
 
@@ -97,6 +97,7 @@ export function buildDriverSearchRefnumUpdateXML(driverGid, trailerId) {
   `.trim();
 }
 
+// to use singleref upd instead
 export function buildGenericStatusUpdateXML(driverGid, refnumValue) {
   const [, xid] = driverGid.split(".");
 

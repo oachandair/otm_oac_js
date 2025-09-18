@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 
 export default function ManifestShipmentCard({ shipment }) {
   const stop1 = shipment.stopOrderRefnums?.find(so => so.stopNumber === 1);

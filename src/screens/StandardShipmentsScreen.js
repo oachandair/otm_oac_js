@@ -1,11 +1,11 @@
-import React, { useEffect, useState, useLayoutEffect } from "react";
-import { View, Text, FlatList, Alert, TouchableOpacity, TextInput, Image, ActivityIndicator, SafeAreaView } from "react-native";
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useEffect, useState, useLayoutEffect } from "react";
+import { View, Text, FlatList, Alert, TouchableOpacity, TextInput, Image, ActivityIndicator } from "react-native";
+import { MaterialIcons } from '@expo/vector-icons';
 import StandardShipmentCard from '../components/StandardShipmentCard';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { getVisibleShipments } from "../services/shpmentsService";
 import { useAuth } from "../context/AuthContext";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function StandardShipmentsScreen() {
   useEffect(() => {
@@ -38,8 +38,14 @@ export default function StandardShipmentsScreen() {
   }, []);
 
   const renderItem = ({ item }) => {
+    let screenName = "ShipmentDetailsScreenVR"; // default for OTHER
+    if (authState.roles.includes("SUPERVISOR")) {
+      screenName = "ShipmentDetailsScreenSP";
+    } else if (authState.roles.includes("DRIVER")) {
+      screenName = "ShipmentDetailsScreenDR";
+    }
     return (
-      <TouchableOpacity onPress={() => navigation.navigate("ShipmentDetails", { shipmentGid: item.shipmentGid })}>
+      <TouchableOpacity onPress={() => navigation.navigate(screenName, { shipmentGid: item.shipmentGid })}>
         <StandardShipmentCard shipment={item} />
       </TouchableOpacity>
     );
