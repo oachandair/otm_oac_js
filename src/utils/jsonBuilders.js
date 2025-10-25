@@ -13,3 +13,17 @@ export function buildShipmentEventGPSPayload({ shipmentGid, location, quickCode 
     remarkText,
   };
 }
+
+// Builder for shipment event JSON payload
+export function buildShipmentEventINFPayload({ shipmentGid, quickCode, remarkText }) {
+  const eventDateMillis = Date.now();
+  return {
+    stopNumber: 1,
+    eventDateTz: "Africa/Casablanca",
+    shipmentGid,
+    eventDateOffset: 0,
+    quickCode,
+    remarkText,
+    eventDateMillis,
+  };
+}

@@ -1,9 +1,17 @@
 import { getStoredToken } from "./authService";
 import { HOST } from "../utils/constants";
-import { buildShipmentEventGPSPayload } from "../utils/jsonBuilders";
+import { buildShipmentEventGPSPayload, buildShipmentEventINFPayload } from "../utils/jsonBuilders";
 
-export async function sendShipmentEventGPS({ shipmentGid, location, quickCode = "CSDPK", remarkText = "AAAA-XX-CCC" }) {
-  const eventPayload = buildShipmentEventGPSPayload({ shipmentGid, location, quickCode, remarkText });
+export async function sendShipmentEvent({ type, ...args }) {
+  let eventPayload;
+  if (type === "GPS") {
+    eventPayload = buildShipmentEventGPSPayload(args);
+  } else if (type === "INF") {
+    eventPayload = buildShipmentEventINFPayload(args);
+  } else {
+    throw new Error("Unknown event type");
+  }
+
   const token = await getStoredToken();
   const res = await fetch(`${HOST}/GC3/api/shipment/add_event`, {
     method: "POST",

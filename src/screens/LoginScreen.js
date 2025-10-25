@@ -169,7 +169,7 @@ export default function LoginScreen({ navigation }) {
           zIndex: 10,
         }}
       >
-        Version v1.14
+        Version v1.15-2flows-GPS+INFevents
       </Text>
     </>
   );

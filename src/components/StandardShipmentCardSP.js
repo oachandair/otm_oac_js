@@ -1,13 +1,20 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { MaterialIcons, MaterialCommunityIcons, FontAwesome5, Feather } from '@expo/vector-icons';
-import { getIndicatorColor } from '../utils/indicatorColor';
+import React, { useState } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
+import { MaterialIcons, MaterialCommunityIcons, FontAwesome5, Feather } from "@expo/vector-icons";
+import { sendShipmentEvent } from "../services/shipmentEventService";
+import { useNavigation } from "@react-navigation/native";
 
-export default function StandardShipmentCard({ shipment }) {
-  const stop1 = shipment.stopOrderRefnums?.find(so => so.stopNumber === 1);
-  if (stop1 && stop1.refnumValue2 === "OBHEADER") return null;
-  
-  // Status logic (matching CardSP)
+export default function StandardShipmentCardSP({ shipment }) {
+  const [loadingEvent, setLoadingEvent] = useState(null);
+  const [localButtonStates, setLocalButtonStates] = useState({
+    acceptDisabled: false,
+    denyDisabled: false
+  });
+  const navigation = useNavigation();
+
+  if (!shipment) return null;
+
+  // Status logic
   const refnum2 = shipment.refnumValue2 || "";
   let accentColor = "#B0BEC5";
   let statusText = "Unknown";
@@ -60,6 +67,44 @@ export default function StandardShipmentCard({ shipment }) {
     statusIconLib = MaterialIcons;
   }
 
+  // Event handler
+  const handleEvent = async (quickCode) => {
+    setLoadingEvent(quickCode);
+    try {
+      const args = {
+        shipmentGid: shipment.shipmentGid,
+        quickCode,
+        remarkText: "",
+      };
+      const response = await sendShipmentEvent({ type: "INF", ...args });
+      
+      // Update local button states based on action taken
+      if (quickCode === "CSAPR") {
+        // After successful accept, disable accept button
+        setLocalButtonStates(prev => ({ ...prev, acceptDisabled: true }));
+      } else if (quickCode === "CSDEN") {
+        // After successful deny, disable deny button
+        setLocalButtonStates(prev => ({ ...prev, denyDisabled: true }));
+      }
+      
+      Alert.alert("Event Sent", response);
+    } catch (err) {
+      Alert.alert("Send Failed", err.message || "Failed to send event");
+      // On error, don't update button states - keep them as they were
+    } finally {
+      setLoadingEvent(null);
+    }
+  };
+
+  // Determine initial button availability based on current status
+  const statusPrefix = refnum2.substring(0, 2);
+  const initialCanAccept = ["XX", "AT", "RJ"].includes(statusPrefix);
+  const initialCanDeny = ["XX", "AT"].includes(statusPrefix);
+  
+  // Final button states: initial availability AND local state
+  const canAccept = initialCanAccept && !localButtonStates.acceptDisabled;
+  const canDeny = initialCanDeny && !localButtonStates.denyDisabled;
+
   // MobView Refnum 1 icons
   let refnum1Views = null;
   if (shipment.refnumValue1) {
@@ -96,8 +141,46 @@ export default function StandardShipmentCard({ shipment }) {
   }
 
   return (
-    <View style={styles.cardBox}>
+    <TouchableOpacity
+      style={styles.cardBox}
+      activeOpacity={0.7}
+      onPress={() => navigation.navigate("ShipmentDetailsScreenSP", { shipmentGid: shipment.shipmentGid })}
+      disabled={!!loadingEvent}
+    >
       <View style={styles.cardContent}>
+        {/* Action buttons row */}
+        <View style={styles.actionRow}>
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.denyBtn, !canDeny && { opacity: 0.5 }]}
+            onPress={() => handleEvent("CSDEN")}
+            disabled={!!loadingEvent || !canDeny}
+          >
+            {loadingEvent === "CSDEN" ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <View style={styles.buttonContent}>
+                <MaterialIcons name="cancel" size={16} color="#fff" />
+                <Text style={styles.buttonText}>DENY</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.acceptBtn, !canAccept && { opacity: 0.5 }]}
+            onPress={() => handleEvent("CSAPR")}
+            disabled={!!loadingEvent || !canAccept}
+          >
+            {loadingEvent === "CSAPR" ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <View style={styles.buttonContent}>
+                <Feather name="user-check" size={16} color="#fff" />
+                <Text style={styles.buttonText}>ACCEPT</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
+        
         {/* Header row with ID and status */}
         <View style={styles.headerRow}>
           <FontAwesome5 name="truck" size={18} color={accentColor} style={{ marginRight: 8 }} />
@@ -116,7 +199,7 @@ export default function StandardShipmentCard({ shipment }) {
         {refnum1Views}
         {refnum2View}
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -137,6 +220,12 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
   },
+  actionRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -147,6 +236,36 @@ const styles = StyleSheet.create({
     fontSize: 17,
     color: "#222",
     flex: 1,
+  },
+  actionBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    minWidth: 60,
+  },
+  acceptBtn: {
+    backgroundColor: "#2196F3",
+  },
+  denyBtn: {
+    backgroundColor: "#F44336",
+  },
+  buttonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "bold",
+    letterSpacing: 0.5,
   },
   statusChip: {
     flexDirection: "row",

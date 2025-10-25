@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Alert, TouchableOpacity, TextInput } from "reac
 import ExecutionShipmentCard from '../components/ExecutionShipmentCard';
 import { useCurrentLocation } from "../hooks/useCurrentLocation";
 import MapView, { Marker, Polyline } from "react-native-maps";
-import { getShipmentDetails } from "../services/shpmentsService";
+import { getShipmentDetails } from "../services/shipmentIdService";
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 

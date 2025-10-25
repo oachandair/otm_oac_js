@@ -3,7 +3,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { View, Text, FlatList, Alert, TouchableOpacity, TextInput, Image, ActivityIndicator } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { getVisibleShipments } from "../services/shpmentsService";
+import { getVisibleShipments } from "../services/shipmentListService";
 import { useAuth } from "../context/AuthContext";
 import ManifestShipmentCard from '../components/ManifestShipmentCard';
 
@@ -36,6 +36,19 @@ export default function ManifestShipmentsScreen() {
     }
     load();
   }, []);
+
+  // Add this function for refreshing shipments
+  const reloadShipments = async () => {
+    setLoading(true);
+    try {
+      const data = await getVisibleShipments();
+      setShipments(data);
+    } catch (err) {
+      Alert.alert("Error", err.message || "Unable to load shipments");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const renderItem = ({ item }) => {
     const stop1 = item.stopOrderRefnums?.find(so => so.stopNumber === 1);
@@ -70,16 +83,55 @@ export default function ManifestShipmentsScreen() {
   return (
     <View style={{ flex: 1 }}>
       <SafeAreaView>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 40, marginBottom: 20, paddingHorizontal: 8 }}>
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          marginTop: 40,
+          marginBottom: 20,
+          paddingHorizontal: 8,
+          justifyContent: 'space-between',
+        }}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
-            style={{ marginRight: 8, backgroundColor: '#007AFF', borderRadius: 20, padding: 6 }}
+            style={{ backgroundColor: '#007AFF', borderRadius: 20, padding: 6 }}
+            disabled={loading}
           >
             <MaterialIcons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
-          <Text style={{ fontSize: 22, fontWeight: 'bold', flex: 1, textAlign: 'center', letterSpacing: 1, color: '#007AFF' }}>
-            MANIFESTS
-          </Text>
+          <View style={{ flex: 1, alignItems: 'center' }}>
+            <Text style={{
+              fontSize: 22,
+              fontWeight: 'bold',
+              textAlign: 'center',
+              letterSpacing: 1,
+              color: '#007AFF'
+            }}>
+              MANIFESTS
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={reloadShipments}
+            disabled={loading}
+            style={{
+              backgroundColor: '#007AFF',
+              borderRadius: 20,
+              padding: 6,
+              borderWidth: 1,
+              borderColor: "#007AFF",
+              elevation: 2,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.08,
+              shadowRadius: 2,
+              opacity: loading ? 0.6 : 1,
+              marginLeft: 8,
+            }}
+          >
+            <MaterialIcons name="refresh" size={24} color="#fff" />
+            {loading && (
+              <ActivityIndicator size="small" color="#fff" style={{ marginLeft: 8 }} />
+            )}
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
       <View style={{ marginHorizontal: 16, marginBottom: 8 }}>

@@ -10,17 +10,29 @@ export async function loginOTM(username, password) {
   };
 
   try {
-    const res = await fetch(`${HOST}/GC3/api/auth`, {
+    // Step 1: Quick credential validation using /login endpoint
+    const loginRes = await fetch(`${HOST}/GC3/api/login`, {
       method: "POST",
       headers,
       body: "",
     });
 
-    if (!res.ok) {
-      throw new Error(`Login failed (${res.status})`);
+    if (!loginRes.ok) {
+      throw new Error(`Invalid credentials (${loginRes.status})`);
     }
 
-    const data = await res.json();
+    // Step 2: Get full user profile with roles/privileges using /auth endpoint
+    const authRes = await fetch(`${HOST}/GC3/api/auth`, {
+      method: "POST",
+      headers,
+      body: "",
+    });
+
+    if (!authRes.ok) {
+      throw new Error(`Authorization failed (${authRes.status})`);
+    }
+
+    const data = await authRes.json();
     await SecureStore.setItemAsync("auth", authToken);
 
     return {

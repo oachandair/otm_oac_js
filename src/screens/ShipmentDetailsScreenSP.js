@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useLayoutEffect } from "react";
 import { View, Text, ScrollView, Alert, TouchableOpacity, TextInput } from "react-native";
-import { sendShipmentEventGPS } from "../services/shipmentEventService";
+import { sendShipmentEvent } from "../services/shipmentEventService";
 import ExecutionShipmentCard from '../components/ExecutionShipmentCard';
 import { useCurrentLocation } from "../hooks/useCurrentLocation";
 import MapView, { Marker, Polyline } from "react-native-maps";
-import { getShipmentDetails } from "../services/shpmentsService";
+import { getShipmentDetails } from "../services/shipmentIdService";
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 
@@ -49,7 +49,8 @@ export default function ShipmentDetailsScreenSP({ route }) {
   const latNum = latitude ? parseFloat(latitude) : null;
   const lonNum = longitude ? parseFloat(longitude) : null;
 
-  const handleSendEvent = async (quickCode) => {
+  // GPS event handler
+  const handleSendGPSEvent = async (quickCode) => {
     if (!location?.coords) {
       Alert.alert("Location not available", "Please enable location services and try again.");
       return;
@@ -60,9 +61,26 @@ export default function ShipmentDetailsScreenSP({ route }) {
       quickCode,
       remarkText,
     };
-    console.log("[DEBUG] Event Args:", args);
+    console.log("[DEBUG] GPS Event Args:", args);
     try {
-      const response = await sendShipmentEventGPS(args);
+      const response = await sendShipmentEvent({ type: "GPS", ...args });
+      Alert.alert("Event Sent", response);
+      await reloadShipment();
+    } catch (err) {
+      Alert.alert("Send Failed", err.message);
+    }
+  };
+
+  // Non-GPS event handler
+  const handleSendINFEvent = async (quickCode) => {
+    const args = {
+      shipmentGid: shipment.shipmentGid,
+      quickCode,
+      remarkText,
+    };
+    console.log("[DEBUG] INF Event Args:", args);
+    try {
+      const response = await sendShipmentEvent({ type: "INF", ...args });
       Alert.alert("Event Sent", response);
       await reloadShipment();
     } catch (err) {
@@ -113,17 +131,17 @@ export default function ShipmentDetailsScreenSP({ route }) {
           <View style={{ flex: 1, marginRight: 8 }}>
             <TouchableOpacity
               style={{ backgroundColor: '#FFD600', paddingVertical: 12, borderRadius: 6, alignItems: 'center' }}
-              onPress={() => handleSendEvent("CSAPK")}
+              onPress={() => handleSendINFEvent("CSAPR")}
             >
-              <Text style={{ color: '#333', fontWeight: 'bold' }}>Send CSAPK</Text>
+              <Text style={{ color: '#333', fontWeight: 'bold' }}>Send CSAPR</Text>
             </TouchableOpacity>
           </View>
           <View style={{ flex: 1, marginLeft: 8 }}>
             <TouchableOpacity
               style={{ backgroundColor: '#43A047', paddingVertical: 12, borderRadius: 6, alignItems: 'center' }}
-              onPress={() => handleSendEvent("CSDPK")}
+              onPress={() => handleSendINFEvent("CSDEN")}
             >
-              <Text style={{ color: '#fff', fontWeight: 'bold' }}>Send CSDPK</Text>
+              <Text style={{ color: '#fff', fontWeight: 'bold' }}>Send CSDEN</Text>
             </TouchableOpacity>
           </View>
         </View>

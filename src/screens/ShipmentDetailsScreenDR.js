@@ -1,32 +1,40 @@
-import { useEffect, useState, useLayoutEffect } from "react";
-import { View, Text, ScrollView, Alert, TouchableOpacity, TextInput } from "react-native";
-import { sendShipmentEventGPS } from "../services/shipmentEventService";
-import ExecutionShipmentCard from '../components/ExecutionShipmentCard';
+import React, { useState, useEffect, useLayoutEffect } from "react";
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator, Modal } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
+import ExecutionShipmentCard from "../components/ExecutionShipmentCard";
+import { getShipmentDetails } from "../services/shipmentIdService";
+import { sendShipmentEvent } from "../services/shipmentEventService";
 import { useCurrentLocation } from "../hooks/useCurrentLocation";
-import MapView, { Marker, Polyline } from "react-native-maps";
-import { getShipmentDetails } from "../services/shpmentsService";
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { FontAwesome5 } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 
 export default function ShipmentDetailsScreenDR({ route }) {
-  useEffect(() => {
-    console.log('Screen mounted: ShipmentDetailsScreenDR');
-  }, []);
   const navigation = useNavigation();
+
   useLayoutEffect(() => {
     navigation.setOptions({ headerShown: false });
   }, [navigation]);
-  const [remarkText, setRemarkText] = useState("");
-  const location = useCurrentLocation();
-  const { shipmentGid } = route.params;
+
   const [shipment, setShipment] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalType, setModalType] = useState("");
+  const [modalRemark, setModalRemark] = useState("");
+  const location = useCurrentLocation();
+  const shipmentGid = route?.params?.shipmentGid;
 
   const reloadShipment = async () => {
+    setLoading(true);
     try {
       const data = await getShipmentDetails(shipmentGid);
       setShipment(data);
+      setLastUpdated(new Date());
     } catch (err) {
-      Alert.alert("Error", err.message || "Unable to load shipment details");
+      Alert.alert("Reload Failed", err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -38,18 +46,45 @@ export default function ShipmentDetailsScreenDR({ route }) {
     return <Text style={{ textAlign: 'center', marginTop: 40 }}>Loading...</Text>;
   }
 
-  const latitude = shipment.shipmentRefnum?.find(
-    ref => ref.shipmentRefnumBeanData?.shipmentRefnumQualGid === "TMSA.LATITUDE"
-  )?.shipmentRefnumBeanData?.shipmentRefnumValue;
+  const attachStatus = shipment.statusAttach;
+  let transportIcon = "truck";
+  let transportColor = "#B0BEC5";
 
-  const longitude = shipment.shipmentRefnum?.find(
-    ref => ref.shipmentRefnumBeanData?.shipmentRefnumQualGid === "TMSA.LONGITUDE"
-  )?.shipmentRefnumBeanData?.shipmentRefnumValue;
+  // Set transportColor to match button colors for ATTACHED and DETACHED
+  switch (attachStatus) {
+    case "ATTACHED":
+    case "ATTACHED_CONFIRMED":
+      transportIcon = "truck-loading";
+      transportColor = "#FFC107"; // Darker yellow for better contrast
+      break;
+    case "DETACHED":
+      transportIcon = "truck-moving";
+      transportColor = "#43A047"; // Green
+      break;
+    case "DETACHED_TEMPORARY":
+      transportIcon = "truck";
+      transportColor = "#FFC107"; // Match darker yellow
+      break;
+    case "NOTAPPLICABLE":
+      transportIcon = "ban";
+      transportColor = "#888";
+      break;
+    case "NOTATTACHED":
+      transportIcon = "truck";
+      transportColor = "#B0BEC5";
+      break;
+    default:
+      transportIcon = "truck";
+      transportColor = "#B0BEC5";
+  }
 
-  const latNum = latitude ? parseFloat(latitude) : null;
-  const lonNum = longitude ? parseFloat(longitude) : null;
+  const openModal = (type) => {
+    setModalType(type);
+    setModalRemark("");
+    setModalVisible(true);
+  };
 
-  const handleSendEvent = async (quickCode) => {
+  const handleSendGPSEvent = async (quickCode, remarkText) => {
     if (!location?.coords) {
       Alert.alert("Location not available", "Please enable location services and try again.");
       return;
@@ -60,10 +95,26 @@ export default function ShipmentDetailsScreenDR({ route }) {
       quickCode,
       remarkText,
     };
-    console.log("[DEBUG] Event Args:", args);
     try {
-      const response = await sendShipmentEventGPS(args);
+      const response = await sendShipmentEvent({ type: "GPS", ...args });
       Alert.alert("Event Sent", response);
+      await new Promise(res => setTimeout(res, 2000)); // Add 2s delay
+      await reloadShipment();
+    } catch (err) {
+      Alert.alert("Send Failed", err.message);
+    }
+  };
+
+  const handleSendINFEvent = async (quickCode, remarkText) => {
+    const args = {
+      shipmentGid: shipment.shipmentGid,
+      quickCode,
+      remarkText,
+    };
+    try {
+      const response = await sendShipmentEvent({ type: "INF", ...args });
+      Alert.alert("Event Sent", response);
+      await new Promise(res => setTimeout(res, 2000)); // Add 2s delay
       await reloadShipment();
     } catch (err) {
       Alert.alert("Send Failed", err.message);
@@ -71,127 +122,261 @@ export default function ShipmentDetailsScreenDR({ route }) {
   };
 
   return (
-    <View style={{ flex: 1 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 40, marginBottom: 20, paddingHorizontal: 8 }}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={{ marginRight: 8, backgroundColor: '#007AFF', borderRadius: 20, padding: 6 }}
-        >
-          <MaterialIcons name="arrow-back" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={{ fontSize: 22, fontWeight: 'bold', flex: 1, textAlign: 'center', letterSpacing: 1, color: '#007AFF' }}>
-          TMPA TRACTION
-        </Text>
-      </View>
-      <ScrollView style={{ flex: 1, padding: 16 }}>
-        {/* Move the map to the top */}
-        {typeof latNum === 'number' && typeof lonNum === 'number' && (
-          <View
-            style={{
-              height: 280,
-              marginVertical: 16,
-              borderRadius: 18,
-              overflow: 'hidden',
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.15,
-              shadowRadius: 8,
-              elevation: 4,
-              borderWidth: 1,
-              borderColor: "#E0E0E0",
-              backgroundColor: "#fff",
-            }}
-          >
-            <MapView
-              style={{ flex: 1 }}
-              initialRegion={{
-                latitude: latNum,
-                longitude: lonNum,
-                latitudeDelta: 0.0015,
-                longitudeDelta: 0.0015,
-              }}
-              showsUserLocation={true}
-              showsCompass={true}
-              zoomEnabled={true}
-              pitchEnabled={true}
-              rotateEnabled={true}
-            >
-              <Marker
-                coordinate={{ latitude: latNum, longitude: lonNum }}
-                title="Shipment Location"
-                pinColor="blue"
-                description={`Lat: ${latNum}, Lon: ${lonNum}`}
-              />
-              {location?.coords &&
-                typeof location.coords.latitude === 'number' &&
-                typeof location.coords.longitude === 'number' && (
-                  <Marker
-                    coordinate={{ latitude: location.coords.latitude, longitude: location.coords.longitude }}
-                    title="Your Location"
-                    pinColor="green"
-                    description={`Lat: ${location.coords.latitude}, Lon: ${location.coords.longitude}`}
-                  />
-              )}
-              {location?.coords &&
-                typeof location.coords.latitude === 'number' &&
-                typeof location.coords.longitude === 'number' && (
-                  <Polyline
-                    coordinates={[
-                      { latitude: location.coords.latitude, longitude: location.coords.longitude },
-                      { latitude: latNum, longitude: lonNum }
-                    ]}
-                    strokeColor="#007AFF"
-                    strokeWidth={3}
-                  />
-              )}
-            </MapView>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+      <View style={{ flex: 1 }}>
+        {/* Global loading overlay */}
+        {loading && (
+          <View style={{
+            position: 'absolute',
+            top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(255,255,255,0.5)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 999,
+          }}>
+            <ActivityIndicator size="large" color="#007AFF" />
+            <Text style={{ marginTop: 12, color: "#007AFF", fontWeight: "bold", fontSize: 16 }}>Refreshing...</Text>
           </View>
         )}
-        {/* Shipment details and actions below the map */}
-        <ExecutionShipmentCard shipment={shipment} />
-        <View style={{ marginVertical: 12 }}>
-          <TextInput
-            value={remarkText}
-            onChangeText={setRemarkText}
-            placeholder="Remark..."
+
+        {/* Header */}
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          marginTop: 40,
+          marginBottom: 20,
+          paddingHorizontal: 8,
+          justifyContent: 'space-between',
+        }}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={{ backgroundColor: '#007AFF', borderRadius: 20, padding: 6 }}
+            disabled={loading} // Disable during loading
+          >
+            <MaterialIcons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <View style={{ flex: 1, alignItems: 'center' }}>
+            <Text style={{
+              fontSize: 22,
+              fontWeight: 'bold',
+              textAlign: 'center',
+              letterSpacing: 1,
+              color: '#007AFF'
+            }}>
+              TMPA TRACTION
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={reloadShipment}
+            disabled={loading}
             style={{
-              fontSize: 16,
-              color: '#222',
+              backgroundColor: '#007AFF',
+              borderRadius: 20,
+              padding: 6,
               borderWidth: 1,
-              borderColor: '#E0E0E0',
-              borderRadius: 8,
-              paddingHorizontal: 12,
-              paddingVertical: 10,
-              backgroundColor: '#F9F9F9',
-              shadowColor: '#000',
+              borderColor: "#007AFF",
+              elevation: 2,
+              shadowColor: "#000",
               shadowOffset: { width: 0, height: 1 },
               shadowOpacity: 0.08,
               shadowRadius: 2,
-              elevation: 1,
+              opacity: loading ? 0.6 : 1,
+              marginLeft: 8,
             }}
-            multiline
-            maxLength={120}
-          />
+          >
+            <MaterialCommunityIcons name="refresh" size={24} color="#fff" />
+            {loading && (
+              <ActivityIndicator size="small" color="#fff" style={{ marginLeft: 8 }} />
+            )}
+          </TouchableOpacity>
         </View>
-        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginVertical: 12 }}>
-          <View style={{ flex: 1, marginRight: 8 }}>
+        <View style={{ flex: 1 }}>
+          {/* Shipment info row */}
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: transportColor,
+              borderRadius: 14,
+              paddingVertical: 10,
+              paddingHorizontal: 16,
+              marginBottom: 12,
+              marginHorizontal: 0,
+            }}
+          >
+            <FontAwesome5
+              name={transportIcon}
+              size={22}
+              color="#fff"
+              style={{ marginRight: 12 }}
+              solid
+            />
+            <MaterialCommunityIcons name="identifier" size={22} color="#fff" style={{ marginRight: 4 }} />
+            <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 15, marginRight: 12 }}>
+              {shipment.shipmentGid}
+            </Text>
+            <MaterialIcons name="location-on" size={22} color="#fff" style={{ marginRight: 4 }} />
+            <Text style={{ color: "#fff", fontSize: 15 }}>
+              {shipment.destLocationGid}
+            </Text>
+          </View>
+
+          {/* Last updated timestamp */}
+          {lastUpdated && (
+            <Text style={{ color: "#888", fontSize: 12, textAlign: "center", marginBottom: 8 }}>
+              Last updated: {lastUpdated.toLocaleTimeString()}
+            </Text>
+          )}
+
+          {/* Event buttons */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', marginTop: 8, marginBottom: 8 }}>
             <TouchableOpacity
-              style={{ backgroundColor: '#FFD600', paddingVertical: 12, borderRadius: 6, alignItems: 'center' }}
-              onPress={() => handleSendEvent("CSAPK")}
+              style={{
+                backgroundColor: '#FFC107',
+                width: 72,
+                height: 72,
+                borderRadius: 36,
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginHorizontal: 12,
+                elevation: 4,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.15,
+                shadowRadius: 8,
+                opacity: loading ? 0.6 : 1,
+              }}
+              onPress={() => openModal("CSATT")}
+              disabled={loading}
             >
-              <Text style={{ color: '#333', fontWeight: 'bold' }}>Send CSAPK</Text>
+              {loading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16, textAlign: 'center' }}>ATTACH</Text>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{
+                backgroundColor: '#43A047',
+                width: 72,
+                height: 72,
+                borderRadius: 36,
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginHorizontal: 12,
+                elevation: 4,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.15,
+                shadowRadius: 8,
+                opacity: loading ? 0.6 : 1,
+              }}
+              onPress={() => openModal("CSDET")}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16, textAlign: 'center' }}>DETACH</Text>
+              )}
             </TouchableOpacity>
           </View>
-          <View style={{ flex: 1, marginLeft: 8 }}>
-            <TouchableOpacity
-              style={{ backgroundColor: '#43A047', paddingVertical: 12, borderRadius: 6, alignItems: 'center' }}
-              onPress={() => handleSendEvent("CSDPK")}
-            >
-              <Text style={{ color: '#fff', fontWeight: 'bold' }}>Send CSDPK</Text>
-            </TouchableOpacity>
+
+          {/* Modal */}
+          <Modal
+            visible={modalVisible}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setModalVisible(false)}
+          >
+            <View style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              backgroundColor: "rgba(0,0,0,0.3)"
+            }}>
+              <View style={{
+                backgroundColor: "#fff",
+                borderRadius: 12,
+                padding: 20,
+                width: "80%",
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.2,
+                shadowRadius: 8,
+                elevation: 6,
+              }}>
+                <Text style={{ fontWeight: "bold", fontSize: 18, marginBottom: 12, color: modalType === "CSDET" ? "#43A047" : "#007AFF" }}>
+                  Confirm {modalType} Event
+                </Text>
+                <Text style={{ marginBottom: 8 }}>Add a remark (optional):</Text>
+                <TextInput
+                  value={modalRemark}
+                  onChangeText={setModalRemark}
+                  placeholder="Remark..."
+                  style={{
+                    fontSize: 16,
+                    color: "#222",
+                    borderWidth: 1,
+                    borderColor: "#E0E0E0",
+                    borderRadius: 8,
+                    paddingHorizontal: 12,
+                    paddingVertical: 10,
+                    backgroundColor: "#F9F9F9",
+                    marginBottom: 16,
+                  }}
+                  multiline
+                  maxLength={120}
+                  editable={!loading}
+                />
+                <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
+                  <TouchableOpacity
+                    onPress={() => setModalVisible(false)}
+                    style={{ marginRight: 16 }}
+                    disabled={loading}
+                  >
+                    <Text style={{ color: "#888", fontWeight: "bold", fontSize: 16 }}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={async () => {
+                      try {
+                        if (modalType === "CSDET") {
+                          await handleSendGPSEvent("CSDET", modalRemark);
+                        } else if (modalType === "CSATT") {
+                          await handleSendINFEvent("CSATT", modalRemark);
+                        }
+                      } catch (err) {
+                        Alert.alert("Send Failed", err.message);
+                      } finally {
+                        setModalVisible(false); // Always close modal
+                      }
+                    }}
+                    style={{
+                      backgroundColor: modalType === "CSDET" ? "#43A047" : "#FFC107",
+                      borderRadius: 6,
+                      paddingHorizontal: 18,
+                      paddingVertical: 8,
+                      opacity: loading ? 0.6 : 1,
+                    }}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 16 }}>OK</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </Modal>
+
+          {/* Card fills remaining space */}
+          <View style={{ flex: 1 }}>
+            <ExecutionShipmentCard shipment={shipment} loading={loading} />
           </View>
         </View>
-      </ScrollView>
-    </View>
+      </View>
+    </SafeAreaView>
   );
 }
